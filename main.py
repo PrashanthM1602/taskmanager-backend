@@ -742,3 +742,74 @@ def delete_note(note_id: int, db: Session = Depends(get_db)):
 
     return {"message": "Deleted successfully"}
 
+
+# ==============================
+# 🔐 AUTH (ADD THIS AT BOTTOM)
+# ==============================
+
+from fastapi import HTTPException, Depends
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import Session
+from jose import jwt
+from pydantic import BaseModel
+
+
+from models import User
+# ==============================
+# 👤 USER MODEL
+# ==============================
+# class User(Base):
+#     __tablename__ = "users"
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     email = Column(String, unique=True)
+#     password = Column(String)
+
+# ==============================
+# 🔐 CONFIG
+# ==============================
+SECRET_KEY = "simplekey"
+ALGORITHM = "HS256"
+
+# ==============================
+# 📦 REQUEST MODEL
+# ==============================
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+# ==============================
+# 🚀 REGISTER
+# ==============================
+@app.post("/register")
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+
+    existing = db.query(User).filter(User.email == request.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    new_user = User(
+        email=request.email,
+        password=request.password
+    )
+
+    db.add(new_user)
+    db.commit()
+
+    return {"message": "User created successfully"}
+
+# ==============================
+# 🚀 LOGIN
+# ==============================
+@app.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+
+    user = db.query(User).filter(User.email == form_data.username).first()
+
+    if not user or user.password != form_data.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm=ALGORITHM)
+
+    return {"access_token": token}
