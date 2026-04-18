@@ -17,6 +17,7 @@ import schemas
 from fastapi import Depends
 
 
+
 # ============================
 # GraphQL Types
 # ============================
@@ -236,20 +237,22 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 # FastAPI App
 # ============================
 
-app = FastAPI()
 
-app.add_middleware(
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()  # ✅ FIRST create app
+
+app.add_middleware(   # ✅ THEN add CORS
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    "https://taskmanger-rouge-six.vercel.app"
+],  # for now (later restrict)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
@@ -753,6 +756,7 @@ from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import Session
 from jose import jwt
 from pydantic import BaseModel
+
 
 
 from models import User
