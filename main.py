@@ -15,7 +15,7 @@ from io import BytesIO
 from fastapi import UploadFile, File
 import schemas
 from fastapi import Depends
-
+from models import PDFData
 
 
 # ============================
@@ -376,15 +376,20 @@ def home():
 async def upload_pdf(file: UploadFile = File(...)):
     try:
         file_bytes = await file.read()
-
         text = extract_text(file_bytes)
 
         if not text:
             return {
-                "error": "❌ This PDF has no readable text (scanned PDFs not supported)"
+                "error": "❌ This PDF has no readable text"
             }
 
-        pdf_store["user"] = text
+        db = SessionLocal()
+
+        new_pdf = PDFData(content=text)
+        db.add(new_pdf)
+        db.commit()
+
+        db.close()
 
         return {
             "message": "PDF uploaded successfully",
@@ -399,7 +404,12 @@ async def upload_pdf(file: UploadFile = File(...)):
 @app.get("/pdf-to-tasks")
 def pdf_to_tasks():
 
-    text = pdf_store.get("user", "")
+    db = SessionLocal()
+
+    pdf = db.query(PDFData).order_by(PDFData.id.desc()).first()
+    text = pdf.content if pdf else ""
+
+    db.close()
 
     if not text:
         return {"error": "No valid PDF uploaded"}
@@ -563,7 +573,12 @@ class AskPDFRequest(BaseModel):
 @app.post("/ask-pdf")
 def ask_pdf(request: AskPDFRequest):
 
-    text = pdf_store.get("user", "")
+    db = SessionLocal()
+
+    pdf = db.query(PDFData).order_by(PDFData.id.desc()).first()
+    text = pdf.content if pdf else ""
+
+    db.close()
 
     if not text:
         return {"error": "No PDF uploaded"}

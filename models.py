@@ -39,3 +39,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     password = Column(String)
+
+class PDFData(Base):
+    __tablename__ = "pdf_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, nullable=False)
