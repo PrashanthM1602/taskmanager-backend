@@ -1,8 +1,16 @@
+# Python
+venv/
 __pycache__/
 *.pyc
-*.db
+*.pyo
+*.pyd
+
+# Env
 .env
-node_modules/
-dist/
-build/
-.vscode/
+
+# DB
+*.db
+
+# OS
+.DS_Store
+Thumbs.db

@@ -401,7 +401,7 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 
 # 🔹 PDF → AI Tasks
-@app.get("/pdf-to-tasks")
+@app.post("/generate-ai-tasks")
 def pdf_to_tasks():
 
     db = SessionLocal()
@@ -473,6 +473,8 @@ Text:
         # 🔥 STEP 3: Build response for UI
         parent_task = build_parent_task(tasks_with_time, ai_title)
 
+        if not parent:
+           return {"error": "Failed to save tasks"}
         return {
             "message": "AI tasks saved successfully",
             "count": len(tasks_with_time),
