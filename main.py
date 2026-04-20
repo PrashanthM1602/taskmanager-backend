@@ -379,21 +379,21 @@ async def upload_pdf(file: UploadFile = File(...)):
         text = extract_text(file_bytes)
 
         if not text:
-            return {
-                "error": "❌ This PDF has no readable text"
-            }
+            return {"error": "❌ This PDF has no readable text"}
 
         db = SessionLocal()
 
         new_pdf = PDFData(content=text)
         db.add(new_pdf)
         db.commit()
+        db.refresh(new_pdf)   # 🔥 IMPORTANT
 
         db.close()
 
         return {
             "message": "PDF uploaded successfully",
-            "preview": text[:200]
+            "preview": text[:200],
+            "pdf_id": new_pdf.id   # 🔥 ADD THIS
         }
 
     except Exception as e:
@@ -401,18 +401,19 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 
 # 🔹 PDF → AI Tasks
-@app.post("/generate-ai-tasks")
-def pdf_to_tasks():
+@app.post("/generate-ai-tasks/{pdf_id}")
+def pdf_to_tasks(pdf_id: int):
 
     db = SessionLocal()
 
-    pdf = db.query(PDFData).order_by(PDFData.id.desc()).first()
-    text = pdf.content if pdf else ""
+    pdf = db.query(PDFData).filter(PDFData.id == pdf_id).first()
 
     db.close()
 
-    if not text:
-        return {"error": "No valid PDF uploaded"}
+    if not pdf:
+        return {"error": "PDF not found"}
+
+    text = pdf.content
 
     try:
         response = client.chat.completions.create(
